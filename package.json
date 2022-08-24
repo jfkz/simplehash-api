@@ -2,6 +2,7 @@
   "name": "simplehash-api",
   "version": "0.0.2",
   "description": "Simplehash API Library",
+  "homepage": "https://github.com/jfkz/simplehash-api",
   "engines": {
     "node": ">= 14.0.0"
   },
