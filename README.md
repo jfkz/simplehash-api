@@ -1,5 +1,7 @@
 # SimpleHash API
 
+[![NPM](https://nodei.co/npm/simplehash-api.png)](https://nodei.co/npm/simplehash-api/)
+
 ## Introduction
 
 SimpleHash is Multi-chain NFT API. Live on Ethereum, Polygon, Solana, Optimism and Arbitrum.

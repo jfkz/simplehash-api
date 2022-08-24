@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { NFT, Sale, Transfer } from './interfaces';
-import { Chain } from './types';
+import { Chain, Order } from './types';
 
 interface Options {
   endPoint: string;
@@ -14,12 +14,7 @@ class SimpleHashAPI {
     endPoint: 'https://api.simplehash.com/api/v0/nfts/',
     floodControl: true,
   };
-
   private readonly apiKey: string;
-
-  public static createApi(apiKey: string, options?: Partial<Options>) {
-    return new SimpleHashAPI(apiKey, options);
-  }
 
   public constructor(apiKey: string, options?: Partial<Options>) {
     this.apiKey = apiKey;
@@ -29,30 +24,42 @@ class SimpleHashAPI {
     }
   }
 
-  public async nftsByOwners(chains: Chain[], walletAddress: string): Promise<NFT[]> {
+  /**
+   * This endpoint is commonly used to pass specific wallet addresses to get back the metadata of the NFTs held by them:
+   * @param chains Name of the chain(s) (e.g., optimism), comma-separated for multiple values (e.g, optimism,ethereum)
+   * @param walletAddresses Owner wallet address(es), comma-separated for multiple values (e.g., 0xa12,0xb34). Limit of 20 addresses.
+   * @returns Array of NFTs
+   */
+  public async nftsByOwners(chains: Chain[], walletAddresses: string[]): Promise<NFT[]> {
     const chain = chains.join(',');
+    const wallet = walletAddresses.join(',');
+    const url = `owners?chains=${chain}&wallet_addresses=${wallet}`;
+    return this.paginatedGet<NFT>(url, 'nfts');
+  }
 
-    const nfts: NFT[] = [];
-
-    let url = `owners?chains=${chain}&wallet_addresses=${walletAddress}`;
-
-    while (url) {
-      const field = 'nfts';
-      const { next, [field]: data } = await this.get<{ next: string, nfts: NFT[] }>(url);
-      url = next;
-      nfts.push(...data);
-
-      if (url) {
-        if (this.options.floodControl) {
-          await sleep(300);
-        }
-      }
-    }
-    return nfts;
+  /**
+   * This endpoint is commonly used to pass specific wallet addresses to get back a list of inbound and outbound NFT transfers:
+   * @param chains Name of the chain(s) (e.g., optimism), comma-separated for multiple values (e.g, optimism,ethereum)
+   * @param walletAddresses Owner wallet address(es), comma-separated for multiple values (e.g., 0xa12,0xb34). Limit of 20 addresses.
+   * @param orderBy Available values are timestamp_desc (default) or timestamp_asc
+   * @returns Array of transfers
+   */
+  public async transfersByWallets(chains: Chain[], walletAddresses: string[], orderBy: Order = 'timestamp_desc'): Promise<Transfer[]> {
+    const chain = chains.join(',');
+    const wallet = walletAddresses.join(',');
+    const url = `owners?chains=${chain}&wallet_addresses=${wallet}&order_by=${orderBy}`;
+    return this.paginatedGet<Transfer>(url, 'transfers');
   }
   
-  public async transfersByNft(chain: Chain, contractAddress: string, tokenId = ''): Promise<Transfer[]> {
-
+  /**
+   * This endpoint is commonly used to pass a single specific NFT to get back a list of its historical transfers:
+   * @param chain Name of the chain
+   * @param contractAddress Address of the NFT contract
+   * @param tokenId Token ID of the given NFT
+   * @param orderBy Available values are timestamp_desc (default) or timestamp_asc
+   * @returns Array of transfers
+   */
+  public async transfersByNft(chain: Chain, contractAddress: string, tokenId = '', orderBy: Order = 'timestamp_desc'): Promise<Transfer[]> {
     if (chain !== 'solana' && tokenId === '') {
       throw new Error('tokenId is required for non-solana chains');
     }
@@ -66,6 +73,8 @@ class SimpleHashAPI {
         url = `transfers/${chain}/${contractAddress}/${tokenId}`;
         break;
     }
+
+    url = `${url}?order_by=${orderBy}`;
 
     return this.paginatedGet<Transfer>(url, 'transfers');
   }
