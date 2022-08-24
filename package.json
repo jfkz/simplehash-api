@@ -1,6 +1,6 @@
 {
   "name": "simplehash-api",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Simplehash API Library",
   "homepage": "https://github.com/jfkz/simplehash-api",
   "engines": {
