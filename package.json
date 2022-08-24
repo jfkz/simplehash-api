@@ -1,6 +1,6 @@
 {
   "name": "simplehash-api",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Simplehash API Library",
   "engines": {
     "node": ">= 14.0.0"
