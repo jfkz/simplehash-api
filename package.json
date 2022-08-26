@@ -3,9 +3,15 @@
   "version": "0.0.3",
   "description": "Simplehash API Library",
   "homepage": "https://github.com/jfkz/simplehash-api",
+  "repository": "https://github.com/jfkz/simplehash-api",
   "engines": {
     "node": ">= 14.0.0"
   },
+  "main": "dist/index.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "clean": "rimraf coverage build tmp",
     "prebuild": "npm run lint",
