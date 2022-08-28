@@ -47,7 +47,7 @@ class SimpleHashAPI {
   public async transfersByWallets(chains: Chain[], walletAddresses: string[], orderBy: Order = 'timestamp_desc'): Promise<Transfer[]> {
     const chain = chains.join(',');
     const wallet = walletAddresses.join(',');
-    const url = `owners?chains=${chain}&wallet_addresses=${wallet}&order_by=${orderBy}`;
+    const url = `transfers/wallets?chains=${chain}&wallet_addresses=${wallet}&order_by=${orderBy}`;
     return this.paginatedGet<Transfer>(url, 'transfers');
   }
   
@@ -80,10 +80,12 @@ class SimpleHashAPI {
   }
 
   public async ownersByNft(chain: Chain, contractAddress: string, token_id: string) {
-    return this.get(`owners/${chain}/${contractAddress}/${token_id}`);
+    const url = `${this.options.endPoint}owners/${chain}/${contractAddress}/${token_id}`;
+    return this.get(url);
   }
 
-  private async paginatedGet<T>(url: string, fieldName: string): Promise<T[]> {
+  private async paginatedGet<T>(query: string, fieldName: string): Promise<T[]> {
+    let url = `${this.options.endPoint}${query}`;
     const results: T[] = [];
 
     while (url) {
@@ -101,8 +103,7 @@ class SimpleHashAPI {
     return results;
   }
 
-  private async get<T>(query: string): Promise<T> {
-    const url = `${this.options.endPoint}${query}`;
+  private async get<T>(url: string): Promise<T> {
     try {
       const response = await axios.get<T>(
         url,
