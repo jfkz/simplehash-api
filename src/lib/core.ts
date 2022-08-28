@@ -15,6 +15,7 @@ class SimpleHashAPI {
     floodControl: true,
   };
   private readonly apiKey: string;
+  private lastRequestDate: Date = new Date('1970-01-01');
 
   public constructor(apiKey: string, options?: Partial<Options>) {
     this.apiKey = apiKey;
@@ -92,18 +93,13 @@ class SimpleHashAPI {
       const { next, [fieldName]: data } = await this.get<any>(url);
       url = next;
       results.push(...data);
-
-      if (url) {
-        if (this.options.floodControl) {
-          await sleep(300);
-        }
-      }
     }
 
     return results;
   }
 
   private async get<T>(url: string): Promise<T> {
+    await this.waitForFloodControl();
     try {
       const response = await axios.get<T>(
         url,
@@ -121,6 +117,17 @@ class SimpleHashAPI {
     }
 
     return {} as T;
+  }
+
+  private async waitForFloodControl() {
+    if (this.options.floodControl) {
+      const now = new Date();
+      const diff = now.getTime() - this.lastRequestDate.getTime();
+      if (diff < 100) {
+        await sleep(100);
+      }
+    }
+    this.lastRequestDate = new Date();
   }
 }
 
