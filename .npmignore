@@ -1,0 +1,5 @@
+/src
+.editorconfig
+tsconfig.json
+tsconfig.&.json
+/*.js
