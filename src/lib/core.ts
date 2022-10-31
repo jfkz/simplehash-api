@@ -1,10 +1,11 @@
 import axios from 'axios';
-import { NFT, Sale, Transfer } from './interfaces';
-import { Chain, Order } from './types';
+import { CollectionInfo, NFT, Owner, Sale, Transfer } from './interfaces';
+import { Chain, Marketplace, Order } from './types';
 
 interface Options {
   endPoint: string;
   floodControl: boolean;
+  debugMode: boolean;
 }
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -13,6 +14,7 @@ class SimpleHashAPI {
   private readonly options: Options = {
     endPoint: 'https://api.simplehash.com/api/v0/nfts/',
     floodControl: true,
+    debugMode: false,
   };
   private readonly apiKey: string;
   private lastRequestDate: Date = new Date('1970-01-01');
@@ -26,6 +28,17 @@ class SimpleHashAPI {
   }
 
   /**
+   * This endpoint is commonly used to retrieve metadata of all of the NFTs on a single collection
+   * To understand more about the difference between Collections and Contracts, please refer to our FAQ
+   * 
+   * @param collectionId The unique identifier of the collection (obtainable from an NFT response, or from the Collection ID Lookup endpoint)
+   */
+  public async nftsByCollection(collectionId: string, orderBy: Order = 'timestamp_desc') {
+    const path = `collection/${collectionId}`;
+    return this.getPaginated<NFT>(path, 'nfts');
+  }
+
+  /**
    * This endpoint is commonly used to pass specific wallet addresses to get back the metadata of the NFTs held by them:
    * @param chains Name of the chain(s) (e.g., optimism), comma-separated for multiple values (e.g, optimism,ethereum)
    * @param walletAddresses Owner wallet address(es), comma-separated for multiple values (e.g., 0xa12,0xb34). Limit of 20 addresses.
@@ -35,7 +48,7 @@ class SimpleHashAPI {
     const chain = chains.join(',');
     const wallet = walletAddresses.join(',');
     const url = `owners?chains=${chain}&wallet_addresses=${wallet}`;
-    return this.paginatedGet<NFT>(url, 'nfts');
+    return this.getPaginated<NFT>(url, 'nfts');
   }
 
   /**
@@ -49,9 +62,9 @@ class SimpleHashAPI {
     const chain = chains.join(',');
     const wallet = walletAddresses.join(',');
     const url = `transfers/wallets?chains=${chain}&wallet_addresses=${wallet}&order_by=${orderBy}`;
-    return this.paginatedGet<Transfer>(url, 'transfers');
+    return this.getPaginated<Transfer>(url, 'transfers');
   }
-  
+
   /**
    * This endpoint is commonly used to pass a single specific NFT to get back a list of its historical transfers:
    * @param chain Name of the chain
@@ -77,22 +90,61 @@ class SimpleHashAPI {
 
     url = `${url}?order_by=${orderBy}`;
 
-    return this.paginatedGet<Transfer>(url, 'transfers');
+    return this.getPaginated<Transfer>(url, 'transfers');
   }
 
+  /**
+   * This endpoint is commonly used to pass a chain, contract address, 
+   * and token_id and get the full list of wallets owning this NFT.
+   * The number of owners may be more than 1 in the case of ERC-1155 tokens, or 0 for burned tokens.
+   * 
+   * This endpoint is paginated to 1,000 items per response
+   * 
+   * On Solana, only the chain and contract address should be supplied
+   * @param chain 
+   * @param contractAddress 
+   * @param token_id 
+   * @returns 
+   */
   public async ownersByNft(chain: Chain, contractAddress: string, token_id: string) {
-    const url = `${this.options.endPoint}owners/${chain}/${contractAddress}/${token_id}`;
-    return this.get(url);
+    const url = `owners/${chain}/${contractAddress}/${token_id}`;
+    return this.getPaginated<Owner>(url, 'owners');
   }
 
-  private async paginatedGet<T>(query: string, fieldName: string): Promise<T[]> {
-    let url = `${this.options.endPoint}${query}`;
+  /**
+   * This endpoint is used to obtain the unique identifier for an NFT Collection
+   * These identifiers can be then passed to the NFTs by Collection endpoint. 
+   * Either the metaplex_mint OR the marketplace_collection_id + marketplace_name 
+   * query params should be provided.
+   * @param metaplexMint Metaplex mint address
+   * @param marketplaceCollectionId Marketplace collection ID
+   * @param marketplaceName Marketplace name
+   */
+  public async collectionIDLookup(metaplexMint = '', marketplaceCollectionId = '', marketplaceName: Marketplace = 'opensea') {
+    let url = `collections?`;
+    if (metaplexMint) {
+      url = `${url}metaplex_mint=${metaplexMint}`;
+    } else if (marketplaceCollectionId && marketplaceName) {
+      url = `${url}marketplace_collection_id=${marketplaceCollectionId}&marketplace_name=${marketplaceName}`;
+    } else {
+      throw new Error('metaplexMint or marketplaceCollectionId and marketplaceName are required');
+    }
+
+    return this.getPaginated<CollectionInfo>(url, 'collections');
+  }
+  
+  private async getPaginated<T>(path: string, fieldName: string): Promise<T[]> {
+    let url = `${this.options.endPoint}${path}`;
     const results: T[] = [];
 
+    let page = 1;
     while (url) {
       const { next, [fieldName]: data } = await this.get<any>(url);
       url = next;
       results.push(...data);
+      if (this.options.debugMode) {
+        console.log(`Page ${page++} of ${path} loaded`);
+      }
     }
 
     return results;

@@ -46,6 +46,21 @@ export interface Sale {
   total_price: number,
 }
 
+export interface CollectionInfo {
+  id: string,
+  name: string,
+  description: string,
+  chain: Chain,
+}
+
+export interface Owner {
+  nft_id?: string,
+  owner_address: string,
+  quantity: number,
+  first_acquired_date: string,
+  last_acquired_date: string
+}
+
 export interface Collection {
   collection_id: string,
   name: string,
@@ -90,12 +105,7 @@ export interface NFT {
   status: 'minted' | 'burned',
   token_count: number,
   owner_count: number,
-  owners: {
-    owner_address: string,
-    quantity: number,
-    first_acquired_date: string,
-    last_acquired_date: string
-  }[],
+  owners: Owner[];
   last_sale?: Sale,
   contract: {
     type: string,
@@ -107,5 +117,9 @@ export interface NFT {
     [key: string]: any,
     image_original_url?: string,
     animation_original_url?: string,
+    attributes?: {
+      trait_type: string,
+      value: string | number,
+    }[],
   }
 }
