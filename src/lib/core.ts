@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { CollectionInfo, NFT, Owner, Sale, Transfer } from './interfaces';
+import { CollectionInfo, NFT, Owner, Transfer } from './interfaces';
 import { Chain, Marketplace, Order } from './types';
 
 interface Options {
@@ -121,7 +121,7 @@ class SimpleHashAPI {
    * @param marketplaceName Marketplace name
    */
   public async collectionIDLookup(metaplexMint = '', marketplaceCollectionId = '', marketplaceName: Marketplace = 'opensea') {
-    let url = `collections?`;
+    let url = 'collections?';
     if (metaplexMint) {
       url = `${url}metaplex_mint=${metaplexMint}`;
     } else if (marketplaceCollectionId && marketplaceName) {
