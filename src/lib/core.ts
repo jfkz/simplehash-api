@@ -157,7 +157,10 @@ class SimpleHashAPI {
         const promises = [];
 
         while (i < this.options.parallelRequests && position < count) {
-          const cursorHash = Buffer.from(cursor.replace(size.toString(), position.toString()), 'utf8').toString('base64');
+          const nullDiff = Math.floor(Math.log10(position)) - Math.floor(Math.log10(size));
+          const prefix = '0'.repeat(nullDiff);
+          const newCursor = cursor.replace(prefix + size.toString(), position.toString());
+          const cursorHash = Buffer.from(newCursor, 'utf8').toString('base64');
           promises.push(this.get<any>(url, { cursor: cursorHash }));
           position += size;
           i++;
