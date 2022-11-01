@@ -150,16 +150,25 @@ class SimpleHashAPI {
       const sizeString = nextRegex.exec(cursor)?.[1];
       const size = parseInt(sizeString || '50', 10);
 
+      const threadsCount = Math.min(Math.ceil(count / size), this.options.parallelRequests);
+
+      if (this.options.debugMode) {
+        console.debug(`Selected threads count: ${threadsCount}`);
+      }
+
       let position = size;
       while (position < count) {
 
         let i = 0;
         const promises = [];
 
-        while (i < this.options.parallelRequests && position < count) {
+        while (i < threadsCount && position < count) {
           const nullDiff = Math.floor(Math.log10(position)) - Math.floor(Math.log10(size));
           const prefix = '0'.repeat(nullDiff);
           const newCursor = cursor.replace(prefix + size.toString(), position.toString());
+          if (this.options.debugMode) {
+            console.debug(newCursor);
+          }
           const cursorHash = Buffer.from(newCursor, 'utf8').toString('base64');
           promises.push(this.get<any>(url, { cursor: cursorHash }));
           position += size;
@@ -192,7 +201,7 @@ class SimpleHashAPI {
       const json = response.data;
       return json;
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
 
     return {} as T;
