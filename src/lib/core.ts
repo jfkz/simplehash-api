@@ -6,6 +6,7 @@ interface Options {
   endPoint: string;
   floodControl: boolean;
   debugMode: boolean;
+  parallelRequests: number;
 }
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -15,6 +16,7 @@ class SimpleHashAPI {
     endPoint: 'https://api.simplehash.com/api/v0/nfts/',
     floodControl: true,
     debugMode: false,
+    parallelRequests: 1,
   };
   private readonly apiKey: string;
   private lastRequestDate: Date = new Date('1970-01-01');
@@ -134,28 +136,50 @@ class SimpleHashAPI {
   }
   
   private async getPaginated<T>(path: string, fieldName: string): Promise<T[]> {
-    let url = `${this.options.endPoint}${path}`;
+    const url = `${this.options.endPoint}${path}`;
     const results: T[] = [];
 
-    let page = 1;
-    while (url) {
-      const { next, [fieldName]: data } = await this.get<any>(url);
-      url = next;
-      results.push(...data);
-      if (this.options.debugMode) {
-        console.log(`Page ${page++} of ${path} loaded`);
+    const { next, [fieldName]: data, count } = await this.get<any>(url, { count: 1 });
+    results.push(...data);
+
+    const nextRegex = new RegExp('.0+([0-9]+)__next$', 'gm');
+
+    if (next) {
+      const _cursorHash: string = next.split('cursor=')[1];
+      const cursor = Buffer.from(_cursorHash, 'base64').toString();
+      const sizeString = nextRegex.exec(cursor)?.[1];
+      const size = parseInt(sizeString || '50', 10);
+
+      let position = size;
+      while (position < count) {
+
+        let i = 0;
+        const promises = [];
+
+        while (i < this.options.parallelRequests && position < count) {
+          const cursorHash = Buffer.from(cursor.replace(size.toString(), position.toString()), 'utf8').toString('base64');
+          promises.push(this.get<any>(url, { cursor: cursorHash }));
+          position += size;
+          i++;
+        }
+
+        const responses = await Promise.all(promises);
+        responses.forEach((response) => {
+          results.push(...response[fieldName]);
+        });
       }
     }
 
     return results;
   }
 
-  private async get<T>(url: string): Promise<T> {
+  private async get<T>(url: string, params = {}): Promise<T> {
     await this.waitForFloodControl();
     try {
       const response = await axios.get<T>(
         url,
         {
+          params,
           headers: {
             Accept: 'application/json',
             'x-api-key': this.apiKey,
