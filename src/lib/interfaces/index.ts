@@ -79,6 +79,13 @@ export interface Collection {
   metaplex_mint?: string,
   metaplex_first_verified_creator?: string,
   spam_score: number,
+  floor_prices: FloorPrice[],
+}
+
+export interface FloorPrice {
+  marketplace_id: string,
+  value: number,
+  payment_token: PaymentToken,
 }
 
 export interface NFT {
