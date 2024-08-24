@@ -93,9 +93,11 @@ export interface FloorPrice {
 export interface TokenQuantity {
   address: string;
   quantity: number;
+  quantity_string: string;
   first_acquired_date: string;
   last_acquired_date: string;
 }
+
 export interface NFT {
   nft_id: string;
   chain: Chain;
@@ -138,4 +140,47 @@ export interface NFT {
     }[];
   };
   queried_wallet_balances?: TokenQuantity[];
+}
+
+export interface TokenQuantityFungible extends TokenQuantity {
+  value_usd_cents: number | null;
+  value_usd_cents_string: string | null;
+}
+
+export interface FungiblePrice {
+  marketplace_id: string;
+  marketplace_name: string;
+  value_usd_cents: number;
+  value_usd_cents_string: string;
+}
+
+export interface FungibleToken {
+  fungible_id: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  chain: Chain;
+  token_address: string;
+  prices: FungiblePrice[];
+  total_quantity: bigint;
+  total_quantity_string: string;
+  total_value_usd_cents: number | null;
+  total_value_usd_cents_string: string | null;
+  queried_wallet_balances: TokenQuantityFungible[];
+}
+
+export interface FungibleTokenTransfer {
+  fungible_id: string;
+  chain: Chain;
+  from_address: string;
+  to_address: string;
+  quantity: number;
+  quantity_string: string;
+  timestamp: string;
+  block_number: number;
+  block_hash: string;
+  transaction_index: number;
+  log_index: number;
+  batch_transfer_index: bigint;
+  transaction_hash: string;
 }
