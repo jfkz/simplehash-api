@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Collection, CollectionInfo, FloorPrice, NFT, Owner, Transfer } from './interfaces';
+import { Collection, CollectionInfo, FloorPrice, FungibleToken, FungibleTokenTransfer, NFT, Owner, Transfer } from './interfaces';
 import { Chain, Marketplace, Order } from './types';
 
 interface Options {
@@ -18,7 +18,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 class SimpleHashAPI {
   private readonly options: Options = {
-    endPoint: 'https://api.simplehash.com/api/v0/nfts/',
+    endPoint: 'https://api.simplehash.com/api/v0/',
     floodControl: true,
     debugMode: false,
     parallelRequests: 1,
@@ -231,12 +231,65 @@ class SimpleHashAPI {
    * @param tokenId Token ID of the given NFT
    */
   public async traitFloorPriceByNft(chain: string, contractAddress: string, tokenId: string) {
-    const url = `${this.options.endPoint}traits/${chain}/${contractAddress}/${tokenId}/floors`;
+    const url = `traits/${chain}/${contractAddress}/${tokenId}/floors`;
     return this.getPaginated<FloorPrice>(url, 'trait_floor_prices');
   }
 
-  private async getPaginated<T>(path: string, fieldName: string): Promise<T[]> {
-    const url = `${this.options.endPoint}${path}`;
+  /**
+   * This endpoint is currently in beta for Arbitrum, Base, Base-Sepolia, Bitcoin (Runes), 
+   * Blast, Optimism, Palm, Scroll, Sei (v2), Xai, and Zora
+   * 
+   * This endpoint is commonly used to pass specific wallet addresses to 
+   * get a list of fungibles balances ordered by `last_transferred_date`.
+   * 
+   * @param chains array of chains
+   * @param walletAddresses array of wallet addresses
+   * @param includePrices boolean to include prices
+   */
+  public async fungiblesBalanceByWallets(chains: Chain[], walletAddresses: string[], includePrices = false) {
+    const chain = chains.join(',');
+    const wallet = walletAddresses.join(',');
+    const url = `balances?chains=${chain}&wallet_addresses=${wallet}&include_prices=${includePrices ? 1 : 0}`;
+    const rawResponse = await this.getPaginated<FungibleToken>(url, 'fungibles', 'fungibles');
+    rawResponse.forEach((token) => {
+      const tokenAddress = token.fungible_id.split('.')[1];
+      token.token_address = tokenAddress;
+    });
+    return rawResponse;
+  }
+
+  /**
+   * This endpoint is currently in beta for Arbitrum, Base, Base-Sepolia, Bitcoin (Runes), 
+   * Blast, Optimism, Palm, Scroll, Sei (v2), Xai, and Zora
+   * 
+   * This endpoint is commonly used to pass specific wallet addresses 
+   * to get back a list of inbound and outbound fungible transfers:
+   * 
+   * @param chains chain(s) (e.g., optimism), comma-separated for multiple values (e.g, optimism,ethereum)
+   * @param walletAddresses wallet address(es), comma-separated for multiple values (e.g., 0xa12,0xb34). Limit of 20 addresses.
+   * @param fundgibleIds fungible token id(s), comma-separated for multiple values (e.g., 0xa12,0xb34). Limit of 20 addresses.
+   * @param fromTimestamp Lower bound timestamp (inclusive). Seconds since the Unix epoch.
+   * @param toTimestamp Upper bound timestamp (inclusive). Seconds since the Unix epoch.
+   * @returns 
+   */
+  public async fungibleSalesAndTransfersByWallets(chains: Chain[], walletAddresses: string[], fundgibleIds: string[] = [], fromTimestamp?: number, toTimestamp?: number) {
+    const chain = chains.join(',');
+    const wallet = walletAddresses.join(',');
+    let url = `transfers/wallets?chains=${chain}&wallet_addresses=${wallet}`;
+    if (fundgibleIds.length > 0) {
+      url += `&fungible_ids=${fundgibleIds.join(',')}`;
+    }
+    if (fromTimestamp) {
+      url += `&from_timestamp=${fromTimestamp}`;
+    }
+    if (toTimestamp) {
+      url += `&to_timestamp=${toTimestamp}`;
+    }
+    return this.getPaginated<FungibleTokenTransfer>(url, 'transfers', 'fungibles');
+  }
+
+  private async getPaginated<T>(path: string, fieldName: string, category: 'nfts' | 'fungibles' = 'nfts'): Promise<T[]> {
+    const url = `${this.options.endPoint}${category}/${path}`;
     const results: T[] = [];
 
     const { next, [fieldName]: data, count } = await this.get<any>(url);
@@ -284,8 +337,8 @@ class SimpleHashAPI {
     return results;
   }
 
-  private async getPaginatedSingleThread<T>(path: string, fieldName: string): Promise<T[]> {
-    const url = `${this.options.endPoint}${path}`;
+  private async getPaginatedSingleThread<T>(path: string, fieldName: string, category: 'nfts' | 'fungibles' = 'nfts'): Promise<T[]> {
+    const url = `${this.options.endPoint}${category}/${path}`;
     const results = [];
 
     const { next, [fieldName]: data } = await this.get<any>(url);
