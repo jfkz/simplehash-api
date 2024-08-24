@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Collection, CollectionInfo, FloorPrice, FungibleToken, NFT, Owner, Transfer } from './interfaces';
+import { Collection, CollectionInfo, FloorPrice, FungibleToken, FungibleTokenTransfer, NFT, Owner, Transfer } from './interfaces';
 import { Chain, Marketplace, Order } from './types';
 
 interface Options {
@@ -285,7 +285,7 @@ class SimpleHashAPI {
     if (toTimestamp) {
       url += `&to_timestamp=${toTimestamp}`;
     }
-    return this.getPaginated<Transfer>(url, 'transfers', 'fungibles');
+    return this.getPaginated<FungibleTokenTransfer>(url, 'transfers', 'fungibles');
   }
 
   private async getPaginated<T>(path: string, fieldName: string, category: 'nfts' | 'fungibles' = 'nfts'): Promise<T[]> {
