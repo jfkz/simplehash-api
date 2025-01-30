@@ -83,7 +83,7 @@ class SimpleHashAPI {
   ): Promise<NFT[]> {
     const chain = chains.join(',');
     const wallet = walletAddresses.join(',');
-    let url = `owners?chains=${chain}&wallet_addresses=${wallet}`;
+    let url = `owners_v2?chains=${chain}&wallet_addresses=${wallet}`;
     if (queriedWalletBalances) {
       url += `&queried_wallet_balances=${queriedWalletBalances}`;
     }

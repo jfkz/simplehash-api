@@ -98,6 +98,20 @@ export interface TokenQuantity {
   last_acquired_date: string;
 }
 
+export interface NFTPreview {
+  image_small_url?: string;
+  image_medium_url?: string;
+  image_large_url?: string;
+  image_opengraph_url?: string;
+  blurhash?: string;
+}
+
+export interface TokenContract {
+  type: string;
+  name: string;
+  symbol: string;
+}
+
 export interface NFT {
   nft_id: string;
   chain: Chain;
@@ -109,13 +123,7 @@ export interface NFT {
   video_url?: string;
   audio_url?: string;
   model_url?: string;
-  previews: {
-    image_small_url?: string;
-    image_medium_url?: string;
-    image_large_url?: string;
-    image_opengraph_url?: string;
-    blurhash?: string;
-  };
+  previews: NFTPreview;
   background_color?: string;
   external_url?: string;
   created_date?: Date;
@@ -124,11 +132,7 @@ export interface NFT {
   owner_count: number;
   owners: Owner[];
   last_sale?: Sale;
-  contract: {
-    type: string;
-    name: string;
-    symbol: string;
-  };
+  contract: TokenContract;
   collection: Collection;
   extra_metadata?: {
     [key: string]: any;
@@ -183,4 +187,69 @@ export interface FungibleTokenTransfer {
   log_index: number;
   batch_transfer_index: bigint;
   transaction_hash: string;
+}
+
+export interface CollectionRoyalties {
+  source: string;
+  total_creator_fee_basis_points: number;
+  recipients: any[];
+}
+
+export interface ImageProperties {
+  width: number;
+  height: number;
+  mime_type: string;
+}
+
+export interface MarketplacePage {
+  marketplace_id: string;
+  marketplace_name: string;
+  marketplace_collection_id: string;
+  collection_url: string;
+  verified: boolean | null;
+}
+
+export interface CollectionDetails {
+  collection_id: string;
+  name: string;
+  description: string;
+  image_url: string;
+  image_properties: ImageProperties;
+  banner_image_url: string | null;
+  category: string | null;
+  is_nsfw: boolean;
+  external_url: string | null;
+  twitter_username: string | null;
+  discord_url: string | null;
+  instagram_username: string | null;
+  medium_username: string | null;
+  telegram_url: string | null;
+  marketplace_pages: MarketplacePage[];
+  metaplex_mint: string | null;
+  metaplex_candy_machine: string | null;
+  metaplex_first_verified_creator: string | null;
+  mpl_core_collection_address: string | null;
+  floor_prices: any[];
+  top_bids: any[];
+  distinct_owner_count: number;
+  distinct_nft_count: number;
+  total_quantity: number;
+  chains: string[];
+  top_contracts: string[];
+  collection_royalties: CollectionRoyalties[];
+}
+
+export interface NFTContract {
+  primary_key: string;
+  chain: string;
+  contract_address: string;
+  name: string;
+  type: string;
+  has_multiple_collections: boolean;
+  distinct_nfts_owned: number;
+  distinct_nfts_owned_string: string;
+  total_copies_owned: number;
+  total_copies_owned_string: string;
+  last_acquired_date: string;
+  collections: CollectionDetails[];
 }
