@@ -29,8 +29,7 @@ jobs:
           RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       - run: npm publish --access restricted
         env:
-          # NOTE: using the built-in GITHUB token here because we're publishing to THIS repository's packages.
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v4
         with:
