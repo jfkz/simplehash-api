@@ -349,7 +349,9 @@ class SimpleHashAPI {
       while (nextUrl != null) {
         const { next, [fieldName]: data } = await this.get<any>(nextUrl);
         nextUrl = next;
-        results.push(...data);
+        if (data && data.length > 0) {
+          results.push(...data);
+        }
       }
     }
     return results;
