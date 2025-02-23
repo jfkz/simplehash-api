@@ -83,7 +83,7 @@ class SimpleHashAPI {
   ): Promise<NFT[]> {
     const chain = chains.join(',');
     const wallet = walletAddresses.join(',');
-    let url = `owners?chains=${chain}&wallet_addresses=${wallet}`;
+    let url = `owners_v2?chains=${chain}&wallet_addresses=${wallet}`;
     if (queriedWalletBalances) {
       url += `&queried_wallet_balances=${queriedWalletBalances}`;
     }
@@ -339,6 +339,9 @@ class SimpleHashAPI {
 
   private async getPaginatedSingleThread<T>(path: string, fieldName: string, category: 'nfts' | 'fungibles' = 'nfts'): Promise<T[]> {
     const url = `${this.options.endPoint}${category}/${path}`;
+    if (this.options.debugMode) {
+      console.debug(`Fetching data from ${url}`);
+    }
     const results = [];
 
     const { next, [fieldName]: data } = await this.get<any>(url);
@@ -349,7 +352,9 @@ class SimpleHashAPI {
       while (nextUrl != null) {
         const { next, [fieldName]: data } = await this.get<any>(nextUrl);
         nextUrl = next;
-        results.push(...data);
+        if (data && data.length > 0) {
+          results.push(...data);
+        }
       }
     }
     return results;
