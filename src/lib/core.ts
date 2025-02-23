@@ -339,7 +339,9 @@ class SimpleHashAPI {
 
   private async getPaginatedSingleThread<T>(path: string, fieldName: string, category: 'nfts' | 'fungibles' = 'nfts'): Promise<T[]> {
     const url = `${this.options.endPoint}${category}/${path}`;
-    console.log('url: ', url);
+    if (this.options.debugMode) {
+      console.debug(`Fetching data from ${url}`);
+    }
     const results = [];
 
     const { next, [fieldName]: data } = await this.get<any>(url);
